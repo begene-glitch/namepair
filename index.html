@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장학 싱크탱크: 마스터 이론가 카드 매칭 게임 v5 (버그 수정)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background-color: #f0f4f8;
+            color: #1a202c;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.4rem;
+            margin-bottom: 5px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #4a5568;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .status-container {
+            display: flex;
+            gap: 35px;
+            margin-bottom: 30px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            background-color: #ffffff;
+            padding: 12px 35px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 2px solid #e2e8f0;
+        }
+
+        .game-board {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .vertical-divider {
+            position: absolute;
+            left: 50%;
+            top: 5%;
+            bottom: 5%;
+            width: 4px;
+            background: linear-gradient(to bottom, #cbd5e1, #94a3b8, #cbd5e1);
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .board-column {
+            width: 48%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .column-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #4c51bf;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e2e8f0;
+            width: 90%;
+            text-align: center;
+        }
+
+        .right-col .column-title {
+            color: #2c5282;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            perspective: 1000px;
+        }
+
+        @media (max-width: 800px) {
+            .grid-layout { grid-template-columns: repeat(1, 1fr); }
+        }
+
+        /* ★ [수정] 카드 높이를 고정하지 않고, 최소 높이만 지정하여 텍스트에 따라 유연하게 늘어나도록 변경 */
+        .card {
+            min-height: 150px;
+            height: 100%;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            display: flex;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            animation: matchAnim 0.5s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes matchAnim {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.04); box-shadow: 0 0 20px rgba(72,187,120,0.8); }
+            100% { transform: rotateY(180deg) scale(1); opacity: 0.4; }
+        }
+
+        /* ★ [수정] flex 구조를 개선하여 카드가 늘어나도 앞뒷면이 완전히 겹치도록 설정 */
+        .card-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            color: #ffffff;
+            font-size: 1.8rem;
+            font-weight: 800;
+            border: 3px solid #cbd5e1;
+            z-index: 2;
+        }
+
+        .left-col .card-front {
+            background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+        }
+        .right-col .card-front {
+            background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);
+        }
+
+        .card-front::after {
+            content: "❓";
+            font-weight: 900;
+        }
+
+        .card-back {
+            background-color: #ffffff;
+            transform: rotateY(180deg);
+            word-break: keep-all;
+            border: 3px solid #718096;
+            z-index: 1;
+        }
+
+        .card-back.type-name {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #2b36c1;
+            background-color: #ebf8ff;
+            border-color: #5a67d8;
+        }
+
+        /* ★ [수정] 긴 텍스트도 여유롭게 담기도록 폰트 크기 밸런스 조정 및 패딩 유지 */
+        .card-back.type-desc {
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: #1a202c;
+            background-color: #fff;
+            border-color: #2b6cb0;
+            text-align: left;
+            line-height: 1.45;
+            align-items: center; /* 세로 중앙 정렬 */
+        }
+
+        .card.wrong-flash {
+            box-shadow: 0 0 15px #f56565;
+            border-radius: 12px;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #48bb78, #2f855a);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 900;
+            border: none;
+            padding: 14px 45px;
+            border-radius: 35px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(72,187,120,0.4);
+            transition: transform 0.1s;
+        }
+
+        .btn-reset:hover { transform: scale(1.05); }
+
+        #success-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="success-canvas"></canvas>
+
+    <h1>🧩 교육학 마스터 이론가 매칭 게임</h1>
+    <div class="subtitle">왼쪽의 [학자 이름] 카드와 오른쪽의 [이론 설명] 카드를 뒤집어 짝을 맞추세요! (틀릴 경우 내용을 읽을 수 있도록 5초간 유지됩니다.)</div>
+
+    <div class="status-container">
+        <div>⏱️ 진행 시간: <span id="timer">00:00</span></div>
+        <div>🎯 매칭 성공: <span id="match-count">0</span> / 7 쌍</div>
+    </div>
+
+    <div class="game-board">
+        <div class="vertical-divider"></div>
+        
+        <div class="board-column left-col">
+            <div class="column-title">👴 마스터 이론가 (이름)</div>
+            <div class="grid-layout" id="left-grid"></div>
+        </div>
+        
+        <div class="board-column right-col">
+            <div class="column-title">📖 교육학 핵심 이론 (설명)</div>
+            <div class="grid-layout" id="right-grid"></div>
+        </div>
+    </div>
+
+    <button class="btn-reset" onclick="initGame()">🔄 게임 다시 시작하기</button>
+
+    <script>
+        const rawData = [
+            { name: "위긴스 & 멕타이", desc: "핵심 질문, 영속적 이해, 교육과정의 Alignment, 활동 중심의 오류, 이해의 6가지 측면" },
+            { name: "존 듀이", desc: "Learning by Doing, 반성적 사고" },
+            { name: "에릭슨 & 래닝", desc: "3차원적 교육과정 모델, 개념적 렌즈, 지식의 구조" },
+            { name: "마샬 & 프렌치", desc: "관계맺기 - 집중하기 - 조사하기 - 정리하기 - 개념화하기 - 전이하기 - 성찰하기" },
+            { name: "수잔 브룩하트", desc: "루브릭은 실패기록표가 아닌 성장지도다. 성취 수준 진술문은 학생이 무엇을 할 수 있는지를 묘사하라! 못한다는 말 대신 어떻게 성장해야 하는지 정보를 주어라!" },
+            { name: "노만 웹", desc: "Depth-of-Knowledge Levels, 평가 문항이나 수업 활동이 학생에게 얼마나 깊은 고차원적 사고를 요구하는가" },
+            { name: "비고츠키", desc: "근접발달영역 ZPD(Zone of Proximal Development), 장학 처방은 교사의 현재 역량보다 약간 높은 ZPD를 저격하여 정교하게 비계를 제공할 때 가장 효과적" }
+        ];
+
+        let flippedCards = [];
+        let matchedCount = 0;
+        let timerInterval = null;
+        let timeElapsed = 0;
+        let gameActive = false;
+
+        const canvas = document.getElementById('success-canvas');
+        const ctx = canvas.getContext('2d');
+        let confetti = [];
+        let animationId = null;
+
+        window.onload = function() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            initGame();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initGame() {
+            clearInterval(timerInterval);
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confetti = [];
+            
+            document.getElementById('left-grid').innerHTML = '';
+            document.getElementById('right-grid').innerHTML = '';
+            flippedCards = [];
+            matchedCount = 0;
+            timeElapsed = 0;
+            gameActive = false;
+            document.getElementById('timer').innerText = '00:00';
+            document.getElementById('match-count').innerText = '0';
+
+            let leftDeck = [];
+            let rightDeck = [];
+
+            rawData.forEach((item, index) => {
+                leftDeck.push({ id: index, type: 'name', text: item.name });
+                rightDeck.push({ id: index, type: 'desc', text: item.desc });
+            });
+
+            leftDeck.sort(() => Math.random() - 0.5);
+            rightDeck.sort(() => Math.random() - 0.5);
+
+            renderDeck(leftDeck, 'left-grid');
+            renderDeck(rightDeck, 'right-grid');
+            
+            // ★ [수정] 렌더링 직후 각 컬럼의 카드 높이를 동기화하는 함수 호출
+            setTimeout(adjustCardHeights, 50);
+        }
+
+        function renderDeck(deck, gridId) {
+            const grid = document.getElementById(gridId);
+            deck.forEach((cardData) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.id = cardData.id;
+                card.dataset.type = cardData.type;
+
+                const front = document.createElement('div');
+                front.classList.add('card-face', 'card-front');
+
+                const back = document.createElement('div');
+                back.classList.add('card-face', 'card-back');
+                back.classList.add(cardData.type === 'name' ? 'type-name' : 'type-desc');
+                back.innerText = cardData.text;
+
+                card.appendChild(front);
+                card.appendChild(back);
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        // ★ [신규 추가] 텍스트 길이에 따라 늘어난 최종 높이를 앞/뒷면에 강제로 주입하여 삐져나오지 않게 만드는 마법의 함수
+        function adjustCardHeights() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const backFace = card.querySelector('.card-back');
+                // 실제 콘텐츠가 차지하는 높이 측정
+                const finalHeight = backFace.scrollHeight; 
+                if (finalHeight > 150) {
+                    card.style.height = finalHeight + 'px';
+                }
+            });
+        }
+
+        function startTimer() {
+            gameActive = true;
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+                const secs = String(timeElapsed % 60).padStart(2, '0');
+                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function flipCard() {
+            if (!gameActive && matchedCount === 0 && flippedCards.length === 0) {
+                startTimer();
+            }
+
+            const clickedCard = this;
+
+            if (clickedCard.classList.contains('flipped') || clickedCard.classList.contains('matched') || flippedCards.length >= 2) {
+                return;
+            }
+
+            if (flippedCards.length === 1 && flippedCards[0].dataset.type === clickedCard.dataset.type) {
+                return;
+            }
+
+            clickedCard.classList.add('flipped');
+            flippedCards.push(clickedCard);
+
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const card1 = flippedCards[0];
+            const card2 = flippedCards[1];
+
+            if (card1.dataset.id === card2.dataset.id) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCount++;
+                document.getElementById('match-count').innerText = matchedCount;
+                flippedCards = [];
+
+                if (matchedCount === rawData.length) {
+                    endGame();
+                }
+            } else {
+                card1.classList.add('wrong-flash');
+                card2.classList.add('wrong-flash');
+
+                setTimeout(() => {
+                    card1.classList.remove('flipped', 'wrong-flash');
+                    card2.classList.remove('flipped', 'wrong-flash');
+                    flippedCards = [];
+                }, 5000);
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            gameActive = false;
+            initConfetti();
+            animateConfetti();
+
+            setTimeout(() => {
+                alert(`🎉 퍼펙트! 에리카 선생님!\n7인의 마스터 이론가 요약 카드를 완벽히 마스터하셨습니다.\n⏱️ 최종 소요 시간: ${document.getElementById('timer').innerText}`);
+            }, 400);
+        }
+
+        function initConfetti() {
+            confetti = [];
+            const colors = ['#667eea', '#764ba2', '#48bb78', '#38a169', '#ed64a6', '#ecc94b', '#4299e1'];
+            for (let i = 0; i < 150; i++) {
+                confetti.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let remaining = false;
+
+            for (let i = 0; i < confetti.length; i++) {
+                let p = confetti[i];
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle);
+                p.tilt = Math.sin(p.tiltAngle - i / 5) * 15;
+
+                if (p.y <= canvas.height) {
+                    remaining = true;
+                }
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                ctx.stroke();
+            }
+
+            if (remaining) {
+                animationId = requestAnimationFrame(animateConfetti);
+            }
+        }
+    </script>
+</body>
+</html>
