@@ -155,7 +155,7 @@
             word-break: keep-all;
         }
 
-        /* ★ [신규] 맞았을 때 커졌다 작아지며 안정화되는 튕김 애니메이션 적용 */
+        /* 맞았을 때 통통 튀며 안정화되는 팝 애니메이션 */
         .card.matched {
             animation: popSuccess 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             pointer-events: none;
@@ -230,6 +230,7 @@
     <button class="btn-reset" onclick="initGame()">🔄 게임 다시 시작하기</button>
 
     <script>
+        // ★ 에리카 선생님이 수정 및 승인해 주신 최종 완벽 데이터셋
         const rawData = [
             { name: "위긴스 & 멕타이", desc: "핵심 질문, 영속적 이해, 교육과정의 Alignment, 활동 중심의 오류, 이해의 6가지 측면" },
             { name: "존 듀이", desc: "Learning by Doing, 반성적 사고" },
@@ -237,7 +238,8 @@
             { name: "마샬 & 프렌치", desc: "관계맺기 - 집중하기 - 조사하기 - 정리하기 - 개념화하기 - 전이하기 - 성찰하기" },
             { name: "수잔 브룩하트", desc: "루브릭은 실패기록표가 아닌 성장지도다. 성취 수준 진술문은 학생이 무엇을 할 수 있는지를 묘사하라! 못한다는 말 대신 어떻게 성장해야 하는지 정보를 주어라!" },
             { name: "노만 웹", desc: "Depth-of-Knowledge Levels, 평가 문항이나 수업 활동이 학생에게 얼마나 깊은 고차원적 사고를 요구하는가" },
-            { name: "비고츠키", desc: "근접발달영역 ZPD(Zone of Proximal Development), 장학 처방은 교사의 현재 역량보다 약간 높은 ZPD를 저격하여 정교하게 비계를 제공할 때 가장 효과적" }
+            // ★ [교정] 비고츠키의 설명 문구를 더 쉽고 감동적인 텍스트로 반영 완료
+            { name: "비고츠키", desc: "이미 아는 것은 지루하고, 너무 어려운 것은 포기하기 쉬움. 배움이 일어나는 최적의 장소는 '약간의 도움으로 도달할 수 있는 한 걸음 앞'" }
         ];
 
         let flippedCards = [];
@@ -347,7 +349,6 @@
             const card2 = flippedCards[1];
 
             if (card1.dataset.id === card2.dataset.id) {
-                // ★ [교정] 클래스를 넣는 즉시 CSS 애니메이션(@keyframes popSuccess)이 발동하여 커졌다 작아집니다.
                 card1.classList.add('matched');
                 card2.classList.add('matched');
                 matchedCount++;
