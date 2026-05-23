@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ★ [수정] 제목 반영 -->
     <title>이론가 카드 매칭</title>
     <style>
         body {
@@ -54,7 +53,7 @@
 
         .game-board {
             display: flex;
-            flex-direction: column; /* 모바일 우선: 세로 배치 */
+            flex-direction: column;
             width: 100%;
             max-width: 600px;
             background-color: #ffffff;
@@ -66,7 +65,6 @@
             margin-bottom: 20px;
         }
 
-        /* 데스크톱이나 패드 화면에서는 가로 2열 배치로 자동 전환 */
         @media (min-width: 768px) {
             .game-board {
                 flex-direction: row;
@@ -102,13 +100,12 @@
 
         .grid-layout {
             display: grid;
-            grid-template-columns: 1fr; /* 모바일 가독성을 위해 한 열에 하나씩 배치 */
+            grid-template-columns: 1fr;
             gap: 12px;
             width: 100%;
             box-sizing: border-box;
         }
 
-        /* 터치 씹힘과 텍스트 이탈을 원천 차단하는 2D 카드 구조 */
         .card {
             min-height: 70px;
             cursor: pointer;
@@ -121,11 +118,10 @@
             padding: 12px;
             box-sizing: border-box;
             transition: all 0.2s ease;
-            touch-action: manipulation; /* 모바일 터치 반응 속도 최적화 */
+            touch-action: manipulation;
             border: 2.5px solid transparent;
         }
 
-        /* 카드 미뒤집힘 상태 (앞면 스타일) */
         .card.cover-style {
             background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
             color: #ffffff;
@@ -137,11 +133,9 @@
         .left-col .card.cover-style { background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%); }
         .right-col .card.cover-style { background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%); }
 
-        /* 뒤집혔을 때 텍스트 크기 자동 조절 및 줄바꿈 최적화 */
         .card.flipped {
             background-color: #ffffff;
             color: #1a202c;
-            transform: none;
         }
 
         .left-col .card.flipped {
@@ -161,13 +155,23 @@
             word-break: keep-all;
         }
 
+        /* ★ [신규] 맞았을 때 커졌다 작아지며 안정화되는 튕김 애니메이션 적용 */
         .card.matched {
-            background-color: #edf2f7 !important;
-            color: #a0aec0 !important;
-            border: 2px dashed #cbd5e1 !important;
-            box-shadow: none;
+            animation: popSuccess 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             pointer-events: none;
-            opacity: 0.5;
+        }
+
+        @keyframes popSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); box-shadow: 0 0 15px rgba(72,187,120,0.6); }
+            100% { 
+                transform: scale(1); 
+                background-color: #edf2f7 !important;
+                color: #a0aec0 !important;
+                border: 2px dashed #cbd5e1 !important;
+                box-shadow: none;
+                opacity: 0.55;
+            }
         }
 
         .card.wrong-flash {
@@ -203,7 +207,6 @@
 
     <canvas id="success-canvas"></canvas>
 
-    <!-- ★ [수정] 메인 제목 변경 -->
     <h1>🧩 이론가 카드 매칭</h1>
     <div class="subtitle">왼쪽의 [학자 이름] 카드와 오른쪽의 [이론 설명] 카드를 터치하여 짝을 맞추세요! (틀릴 경우 5초간 유지됩니다.)</div>
 
@@ -227,7 +230,6 @@
     <button class="btn-reset" onclick="initGame()">🔄 게임 다시 시작하기</button>
 
     <script>
-        // ★ [복원] 에리카 선생님이 작성해 주신 원본 데이터셋 그대로 100% 매칭 수록
         const rawData = [
             { name: "위긴스 & 멕타이", desc: "핵심 질문, 영속적 이해, 교육과정의 Alignment, 활동 중심의 오류, 이해의 6가지 측면" },
             { name: "존 듀이", desc: "Learning by Doing, 반성적 사고" },
@@ -345,6 +347,7 @@
             const card2 = flippedCards[1];
 
             if (card1.dataset.id === card2.dataset.id) {
+                // ★ [교정] 클래스를 넣는 즉시 CSS 애니메이션(@keyframes popSuccess)이 발동하여 커졌다 작아집니다.
                 card1.classList.add('matched');
                 card2.classList.add('matched');
                 matchedCount++;
