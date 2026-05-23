@@ -2,94 +2,97 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>장학 싱크탱크: 마스터 이론가 카드 매칭 게임 v5 (버그 수정)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ★ [수정] 제목 반영 -->
+    <title>이론가 카드 매칭</title>
     <style>
         body {
             font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
             background-color: #f0f4f8;
             color: #1a202c;
             margin: 0;
-            padding: 20px;
+            padding: 15px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
+            box-sizing: border-box;
         }
 
         h1 {
             color: #2d3748;
-            font-size: 2.4rem;
-            margin-bottom: 5px;
+            font-size: 1.6rem;
+            margin: 5px 0;
             font-weight: 800;
             text-align: center;
         }
 
         .subtitle {
             color: #4a5568;
-            font-size: 1.2rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.4;
+            padding: 0 10px;
         }
 
         .status-container {
             display: flex;
-            gap: 35px;
-            margin-bottom: 30px;
-            font-size: 1.4rem;
+            gap: 20px;
+            margin-bottom: 15px;
+            font-size: 1rem;
             font-weight: 800;
             background-color: #ffffff;
-            padding: 12px 35px;
+            padding: 10px 20px;
             border-radius: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border: 2px solid #e2e8f0;
         }
 
         .game-board {
             display: flex;
+            flex-direction: column; /* 모바일 우선: 세로 배치 */
             width: 100%;
-            max-width: 1200px;
+            max-width: 600px;
             background-color: #ffffff;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            padding: 25px;
+            padding: 15px;
             box-sizing: border-box;
-            position: relative;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
-        .vertical-divider {
-            position: absolute;
-            left: 50%;
-            top: 5%;
-            bottom: 5%;
-            width: 4px;
-            background: linear-gradient(to bottom, #cbd5e1, #94a3b8, #cbd5e1);
-            transform: translateX(-50%);
-            border-radius: 2px;
+        /* 데스크톱이나 패드 화면에서는 가로 2열 배치로 자동 전환 */
+        @media (min-width: 768px) {
+            .game-board {
+                flex-direction: row;
+                max-width: 1000px;
+            }
+            .board-column { width: 49%; }
+            h1 { font-size: 2.2rem; }
+            .subtitle { font-size: 1.1rem; }
+            .status-container { font-size: 1.3rem; }
         }
 
         .board-column {
-            width: 48%;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
         .column-title {
-            font-size: 1.6rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             color: #4c51bf;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
             border-bottom: 3px solid #e2e8f0;
-            width: 90%;
+            width: 100%;
             text-align: center;
         }
 
@@ -99,133 +102,94 @@
 
         .grid-layout {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            grid-template-columns: 1fr; /* 모바일 가독성을 위해 한 열에 하나씩 배치 */
+            gap: 12px;
             width: 100%;
-            padding: 10px;
             box-sizing: border-box;
-            perspective: 1000px;
         }
 
-        @media (max-width: 800px) {
-            .grid-layout { grid-template-columns: repeat(1, 1fr); }
-        }
-
-        /* ★ [수정] 카드 높이를 고정하지 않고, 최소 높이만 지정하여 텍스트에 따라 유연하게 늘어나도록 변경 */
+        /* 터치 씹힘과 텍스트 이탈을 원천 차단하는 2D 카드 구조 */
         .card {
-            min-height: 150px;
-            height: 100%;
+            min-height: 70px;
             cursor: pointer;
             position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-            display: flex;
-        }
-
-        .card.flipped {
-            transform: rotateY(180deg);
-        }
-
-        .card.matched {
-            animation: matchAnim 0.5s ease forwards;
-            pointer-events: none;
-        }
-
-        @keyframes matchAnim {
-            0% { transform: rotateY(180deg) scale(1); }
-            50% { transform: rotateY(180deg) scale(1.04); box-shadow: 0 0 20px rgba(72,187,120,0.8); }
-            100% { transform: rotateY(180deg) scale(1); opacity: 0.4; }
-        }
-
-        /* ★ [수정] flex 구조를 개선하여 카드가 늘어나도 앞뒷면이 완전히 겹치도록 설정 */
-        .card-face {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 12px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 12px;
             box-sizing: border-box;
+            transition: all 0.2s ease;
+            touch-action: manipulation; /* 모바일 터치 반응 속도 최적화 */
+            border: 2.5px solid transparent;
         }
 
-        .card-front {
+        /* 카드 미뒤집힘 상태 (앞면 스타일) */
+        .card.cover-style {
             background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
             color: #ffffff;
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            border: 3px solid #cbd5e1;
-            z-index: 2;
+            border-color: #cbd5e1;
         }
 
-        .left-col .card-front {
-            background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
-        }
-        .right-col .card-front {
-            background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);
-        }
+        .left-col .card.cover-style { background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%); }
+        .right-col .card.cover-style { background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%); }
 
-        .card-front::after {
-            content: "❓";
-            font-weight: 900;
-        }
-
-        .card-back {
+        /* 뒤집혔을 때 텍스트 크기 자동 조절 및 줄바꿈 최적화 */
+        .card.flipped {
             background-color: #ffffff;
-            transform: rotateY(180deg);
-            word-break: keep-all;
-            border: 3px solid #718096;
-            z-index: 1;
+            color: #1a202c;
+            transform: none;
         }
 
-        .card-back.type-name {
-            font-size: 1.4rem;
-            font-weight: 900;
+        .left-col .card.flipped {
+            font-size: 1.05rem;
+            font-weight: 800;
             color: #2b36c1;
             background-color: #ebf8ff;
             border-color: #5a67d8;
         }
 
-        /* ★ [수정] 긴 텍스트도 여유롭게 담기도록 폰트 크기 밸런스 조정 및 패딩 유지 */
-        .card-back.type-desc {
-            font-size: 1.02rem;
-            font-weight: 800;
-            color: #1a202c;
-            background-color: #fff;
-            border-color: #2b6cb0;
+        .right-col .card.flipped {
+            font-size: 0.88rem;
+            font-weight: 700;
+            line-height: 1.4;
             text-align: left;
-            line-height: 1.45;
-            align-items: center; /* 세로 중앙 정렬 */
+            border-color: #2b6cb0;
+            word-break: keep-all;
+        }
+
+        .card.matched {
+            background-color: #edf2f7 !important;
+            color: #a0aec0 !important;
+            border: 2px dashed #cbd5e1 !important;
+            box-shadow: none;
+            pointer-events: none;
+            opacity: 0.5;
         }
 
         .card.wrong-flash {
-            box-shadow: 0 0 15px #f56565;
-            border-radius: 12px;
+            box-shadow: 0 0 12px #f56565 !important;
+            border-color: #f56565 !important;
         }
 
         .btn-reset {
             background: linear-gradient(135deg, #48bb78, #2f855a);
             color: white;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 900;
             border: none;
-            padding: 14px 45px;
+            padding: 12px 35px;
             border-radius: 35px;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(72,187,120,0.4);
-            transition: transform 0.1s;
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+            touch-action: manipulation;
         }
 
-        .btn-reset:hover { transform: scale(1.05); }
-
         #success-canvas {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -239,17 +203,16 @@
 
     <canvas id="success-canvas"></canvas>
 
-    <h1>🧩 교육학 마스터 이론가 매칭 게임</h1>
-    <div class="subtitle">왼쪽의 [학자 이름] 카드와 오른쪽의 [이론 설명] 카드를 뒤집어 짝을 맞추세요! (틀릴 경우 내용을 읽을 수 있도록 5초간 유지됩니다.)</div>
+    <!-- ★ [수정] 메인 제목 변경 -->
+    <h1>🧩 이론가 카드 매칭</h1>
+    <div class="subtitle">왼쪽의 [학자 이름] 카드와 오른쪽의 [이론 설명] 카드를 터치하여 짝을 맞추세요! (틀릴 경우 5초간 유지됩니다.)</div>
 
     <div class="status-container">
-        <div>⏱️ 진행 시간: <span id="timer">00:00</span></div>
-        <div>🎯 매칭 성공: <span id="match-count">0</span> / 7 쌍</div>
+        <div>⏱️ 시간: <span id="timer">00:00</span></div>
+        <div>🎯 성공: <span id="match-count">0</span> / 7 쌍</div>
     </div>
 
     <div class="game-board">
-        <div class="vertical-divider"></div>
-        
         <div class="board-column left-col">
             <div class="column-title">👴 마스터 이론가 (이름)</div>
             <div class="grid-layout" id="left-grid"></div>
@@ -264,6 +227,7 @@
     <button class="btn-reset" onclick="initGame()">🔄 게임 다시 시작하기</button>
 
     <script>
+        // ★ [복원] 에리카 선생님이 작성해 주신 원본 데이터셋 그대로 100% 매칭 수록
         const rawData = [
             { name: "위긴스 & 멕타이", desc: "핵심 질문, 영속적 이해, 교육과정의 Alignment, 활동 중심의 오류, 이해의 6가지 측면" },
             { name: "존 듀이", desc: "Learning by Doing, 반성적 사고" },
@@ -324,44 +288,20 @@
 
             renderDeck(leftDeck, 'left-grid');
             renderDeck(rightDeck, 'right-grid');
-            
-            // ★ [수정] 렌더링 직후 각 컬럼의 카드 높이를 동기화하는 함수 호출
-            setTimeout(adjustCardHeights, 50);
         }
 
         function renderDeck(deck, gridId) {
             const grid = document.getElementById(gridId);
             deck.forEach((cardData) => {
                 const card = document.createElement('div');
-                card.classList.add('card');
+                card.classList.add('card', 'cover-style');
                 card.dataset.id = cardData.id;
                 card.dataset.type = cardData.type;
+                card.dataset.rawtext = cardData.text;
+                card.innerText = "❓";
 
-                const front = document.createElement('div');
-                front.classList.add('card-face', 'card-front');
-
-                const back = document.createElement('div');
-                back.classList.add('card-face', 'card-back');
-                back.classList.add(cardData.type === 'name' ? 'type-name' : 'type-desc');
-                back.innerText = cardData.text;
-
-                card.appendChild(front);
-                card.appendChild(back);
                 card.addEventListener('click', flipCard);
                 grid.appendChild(card);
-            });
-        }
-
-        // ★ [신규 추가] 텍스트 길이에 따라 늘어난 최종 높이를 앞/뒷면에 강제로 주입하여 삐져나오지 않게 만드는 마법의 함수
-        function adjustCardHeights() {
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                const backFace = card.querySelector('.card-back');
-                // 실제 콘텐츠가 차지하는 높이 측정
-                const finalHeight = backFace.scrollHeight; 
-                if (finalHeight > 150) {
-                    card.style.height = finalHeight + 'px';
-                }
             });
         }
 
@@ -390,7 +330,9 @@
                 return;
             }
 
+            clickedCard.classList.remove('cover-style');
             clickedCard.classList.add('flipped');
+            clickedCard.innerHTML = clickedCard.dataset.rawtext;
             flippedCards.push(clickedCard);
 
             if (flippedCards.length === 2) {
@@ -419,6 +361,10 @@
                 setTimeout(() => {
                     card1.classList.remove('flipped', 'wrong-flash');
                     card2.classList.remove('flipped', 'wrong-flash');
+                    card1.classList.add('cover-style');
+                    card2.classList.add('cover-style');
+                    card1.innerText = "❓";
+                    card2.innerText = "❓";
                     flippedCards = [];
                 }, 5000);
             }
@@ -431,7 +377,7 @@
             animateConfetti();
 
             setTimeout(() => {
-                alert(`🎉 퍼펙트! 에리카 선생님!\n7인의 마스터 이론가 요약 카드를 완벽히 마스터하셨습니다.\n⏱️ 최종 소요 시간: ${document.getElementById('timer').innerText}`);
+                alert(`🎉 퍼펙트! 에리카 선생님!\n7인의 마스터 이론가 요약 카드를 완벽히 마스터하셨습니다.\n⏱️ 소요 시간: ${document.getElementById('timer').innerText}`);
             }, 400);
         }
 
